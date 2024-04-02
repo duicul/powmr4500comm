@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1712040911 source:c:\users\duicul\desktop\testarduinocode\main.cpp
+	<iostream>
+	<stdio.h>
+	<string.h>
+	"inv8851.h"
+
+1711993151 c:\users\duicul\desktop\testarduinocode\inv8851.h
+	<cstdint>
+
+1712072430 source:d:\powmr4500comm\testarduinocode\main.cpp
+	<iostream>
+	<stdio.h>
+	<string.h>
+	"inv8851.h"
+
+1712065817 d:\powmr4500comm\testarduinocode\inv8851.h
+	<cstdint>
+
