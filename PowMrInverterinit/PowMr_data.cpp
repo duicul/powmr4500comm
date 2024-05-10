@@ -5,6 +5,8 @@
 
 PowMr_data::PowMr_data(int _pin_rec,int _pin_send,SoftwareSerial* serial){
   mySerial = serial;
+  pin_rec = _pin_rec;
+  pin_send = _pin_send;
   mySerial->begin(9600,SWSERIAL_8N1,_pin_rec,_pin_send,false,256,0);
 }
 
@@ -65,6 +67,27 @@ unsigned char PowMr_data::reverse(unsigned char b) {
    return b;
 }
 
+String PowMr_data::runModeSerialize(enum run_mode mode){
+   switch(mode){
+    case 0:return "0-standby_mode";
+    case 1:return "1-fault_mode";
+    case 2:return "2-shutdown_mode";
+    case 3:return "3-normal_mode";
+    case 4:return "4-no_battery_mode";
+    case 5:return "5-discharge_mode";
+    case 6:return "6-parallel_discharge";
+    case 7:return "7-bypass_mode";
+    case 8:return "8-charge_mode";
+    case 9:return "9-grid_discharge_mode";
+    case 10:return "10-micro_grid_discharge_mode";
+    case 11:return "11-no_battery_mode";
+    case 12:return "12-unknown";
+    case 13:return "13-unknown";
+    case 14:return "14-unknown";
+    case 15:return "15-unknown";
+    default: return "unknown";
+   };
+}
 
 void PowMr_data::reversearray(unsigned char resp[] , int resp_len){
   unsigned char aux[resp_len];
@@ -110,11 +133,13 @@ void PowMr_data::reversearray(unsigned char resp[] , int resp_len){
   for(int i=0;i<resp_len;i++)
     resp[i]=reverse(aux[i]);
   Serial.println("values");*/
-  for(int i=0;i<resp_len;i++){
+  int i = 0;
+  while(mySerial->available()){
     int val = (int)resp[i];
     Serial.print(i);
     Serial.print(" ");
-    Serial.println(val);}
+    Serial.println(val);
+    i++;}
   Serial.println();
    return read;
 }
@@ -137,13 +162,13 @@ String PowMr_data::convertToJSON(inv8851_state_s *state){
   message += ",\"run_mode\":";
   message += state->run_mode;
   message += ",\"inverter_topology\":";
-  message += state->inverter_topology;
+  message += "\""+runModeSerialize(state->inverter_topology)+"\"";
   message += ",\"llc_topology\":";
-  message += state->llc_topology;
+  message += "\""+runModeSerialize(state->llc_topology)+"\"";
   message += ",\"pv_topology\":";
-  message += state->pv_topology;
+  message += "\""+runModeSerialize(state->pv_topology)+"\"";
   message += ",\"buck_topology\":";
-  message += state->buck_topology;
+  message += "\""+runModeSerialize(state->buck_topology)+"\"";
   message += ",\"system_power\":";
   message += state->system_power;
   message += ",\"charge_finish\":";
@@ -343,6 +368,9 @@ String PowMr_data::convertToJSON(inv8851_state_s *state){
 }
 
 String PowMr_data::read_data(){
+  mySerial->begin(9600,SWSERIAL_8N1,pin_rec,pin_send,false,256,0);
+  sendStateReq();
+  delay(100);
   unsigned char resp[160];
   inv8851_state_s* stateResp;
   readState(resp);

@@ -90,7 +90,7 @@ if __name__ == "__main__":
     #write_api = client.write_api(write_options=SYNCHRONOUS)
 
     for i in range(257):
-        powmr = PowMr('COM4', i)
+        powmr = PowMr('COM6', i)
         powmr.serial.baudrate = 2400
         #powmr.clear_buffers_before_each_transaction = True
         #powmr.debug = True
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         except Exception as e:
                 print(f"Register {i} \t=>   Exception "+str(e))
                 pass
-    powmr = PowMr('COM4', 1)
+    powmr = PowMr('COM6', 1)
     #powmr.read_registers(4501,45)
     powmr.serial.baudrate = 2400
     #powmr.clear_buffers_before_each_transaction = True
