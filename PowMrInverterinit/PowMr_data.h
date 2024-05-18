@@ -8,10 +8,11 @@
 
 //#define ONE_WIRE_BUS 4
 //#define TEMPERATURE_PRECISION 9
-
+#define SOFTWARE_VERSION 5903
 struct PowMr_energy{
-  int16_t pv_power,pv_energy,load_watt,load_energy;
-  int16_t t0026_total_power,t0026_total_energy;
+  int16_t pv_power,load_watt,t0026_total_power;
+  unsigned long duration,last_record;
+  float pv_energy,load_energy,t0026_total_energy;
 };
 
 class PowMr_data: public Data_interface {
@@ -23,13 +24,19 @@ class PowMr_data: public Data_interface {
     char converthexdigit(char hexdigit);
     unsigned char reverse(unsigned char b);
     void reversearray(unsigned char resp[] , int resp_len);
-    bool readState(unsigned char resp[]);
-    String convertToJSON(inv8851_state_s *state);
-    PowMr_energy pm_energy;
+    bool readState(uint8_t * resp);
+    unsigned char respStore[160];
     String runModeSerialize(enum run_mode);
   public:
+    PowMr_energy pm_energy;
     PowMr_data(int pin_rec, int pin_send,SoftwareSerial* serial);
+    String convertToJSON(inv8851_state_s *state);
+    String convertToJSON(PowMr_energy Mr_energy);
     String read_data(); 
+    inv8851_state_s* read_data_value();
+    PowMr_energy initEnergy();
+    PowMr_energy readEnergy();
+    PowMr_energy readEnergyClean();
 };
 
 #endif

@@ -13,14 +13,14 @@ class Credentials {
   
   private:
     char ssid[20], password[20];
-    float ratio;
+    int polling_duration;
   public:
     char* getssid();
     char* getpassword();
-    float getratio();
+    float getpolling_duration();
     void loadCredentials();
     void saveCredentials();
-    void setCredentials(char *s,char *p,float r);
+    void setCredentials(char *s,char *p,int r);
     Credentials();
 };
 

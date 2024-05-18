@@ -104,44 +104,29 @@ void PowMr_data::reversearray(unsigned char resp[] , int resp_len){
     Serial.println(val);}
 }
 
- bool PowMr_data::readState(unsigned char resp[]){
+ bool PowMr_data::readState(uint8_t * resp){
   Serial.println("reading state req");
   //unsigned char resp[160];
   unsigned int resp_len=0;
-  int cnt = 0;
   bool read = false;
   Serial.println("reading state req available ");
-  Serial.println(mySerial->available());
+  resp_len=mySerial->available();
+  Serial.println(resp_len);
   //if(mySerial->available()<sizeof(inv8851_state_s))
   //  return NULL;
-  resp_len=mySerial->available();
-  mySerial->readBytes(resp,mySerial->available());
-  /*while(mySerial->available() && cnt++<500){
-    if(read == false)Serial.println("reading ...");
-    resp[resp_len++] = mySerial->readBytes();
-    read = true;
-  }*/
-
-  //stateResp = NULL;
-  if(read == true)
-   Serial.println("state read, casting");
-   //stateResp = (inv8851_state_s*) resp;
-  /*unsigned char aux[resp_len];
-  for(int i=resp_len-1,j=0;i>=0;i--,j++)
-    aux[i]=resp[j];
-  
-  for(int i=0;i<resp_len;i++)
-    resp[i]=reverse(aux[i]);
-  Serial.println("values");*/
-  int i = 0;
+  size_t rlen = mySerial->readBytes(resp,resp_len);
+  Serial.println(rlen);
+  /*int i = 0;
   while(mySerial->available()){
+    resp[i] = mySerial->read();
     int val = (int)resp[i];
     Serial.print(i);
     Serial.print(" ");
     Serial.println(val);
-    i++;}
-  Serial.println();
-   return read;
+    i++;}*/
+  if(rlen == 0 )
+    return false;
+  return true;
 }
 
 String PowMr_data::convertToJSON(inv8851_state_s *state){
@@ -149,6 +134,8 @@ String PowMr_data::convertToJSON(inv8851_state_s *state){
   if(state == NULL)
     return message;
   message += "{";
+  if(state->software_version != SOFTWARE_VERSION)
+    message += "\"status\":\"disconnected\",";
   message += "\"proto\":";
   message += state->proto;
   message += ",\"command\":";
@@ -367,14 +354,103 @@ String PowMr_data::convertToJSON(inv8851_state_s *state){
   return message;
 }
 
-String PowMr_data::read_data(){
+String PowMr_data::convertToJSON(PowMr_energy Mr_energy){
+  String message = "";
+  message += "{";
+  message += "\"load_energy\":";
+  message += Mr_energy.load_energy;
+  message += ",\"load_watt\":";
+  message += Mr_energy.load_watt;
+  message += ",\"pv_energy\":";
+  message += Mr_energy.pv_energy;
+  message += ",\"pv_power\":";
+  message += Mr_energy.pv_power;
+  message += ",\"t0026_total_energy\":";
+  message += Mr_energy.t0026_total_energy;
+  message += ",\"t0026_total_power\":";
+  message += Mr_energy.t0026_total_power;
+  message += ",\"duration\":";
+  message += Mr_energy.duration;
+  message +=  "}";
+  return message;
+}
+
+inv8851_state_s* PowMr_data::read_data_value(){
   mySerial->begin(9600,SWSERIAL_8N1,pin_rec,pin_send,false,256,0);
   sendStateReq();
-  delay(100);
-  unsigned char resp[160];
   inv8851_state_s* stateResp;
-  readState(resp);
-  stateResp = (inv8851_state_s*) resp;
+  delay(200);
+  bool read = readState(respStore);
+  Serial.println("readState");
+  Serial.println(read);
+  if(read == true){
+    Serial.println("readState true");
+    stateResp = (inv8851_state_s*) respStore;
+    if(stateResp==NULL){
+      Serial.println("readState stateResp NULL");}
+    return stateResp;}
+  return NULL;
+}
+
+String PowMr_data::read_data(){
+  inv8851_state_s* stateResp = read_data_value() ;
+  if(stateResp == NULL){
+    Serial.println("read_data stateResp NULL");
+    return "{\"status\":\"disconnected\"}";}
   String respjson = convertToJSON(stateResp);
   return respjson;
 }
+
+PowMr_energy PowMr_data::initEnergy(){
+  pm_energy.load_energy = 0;
+  pm_energy.load_watt = 0;
+  pm_energy.pv_energy = 0;
+  pm_energy.pv_power = 0;
+  pm_energy.t0026_total_energy = 0;
+  pm_energy.t0026_total_power = 0;
+  pm_energy.duration = 0;
+  pm_energy.last_record = millis()/1000;
+  return pm_energy;
+}
+
+PowMr_energy PowMr_data::readEnergyClean(){
+  PowMr_energy pm_energyaux = readEnergy();
+  pm_energy.load_energy = 0;
+  pm_energy.pv_energy = 0;
+  pm_energy.t0026_total_energy = 0;
+  pm_energy.duration = 0;
+  return pm_energyaux;
+}
+
+PowMr_energy PowMr_data::readEnergy(){
+  unsigned long duration;
+  duration = millis()/1000 - pm_energy.last_record;
+  pm_energy.duration += duration;
+  pm_energy.last_record = millis()/1000;
+  inv8851_state_s* stateResp = read_data_value();
+  if(stateResp == NULL){
+    Serial.println("readEnergy 0 stateResp NULL");
+    inv8851_state_s* stateResp = read_data_value();
+    if(stateResp == NULL){
+      Serial.println("readEnergy 1 stateResp NULL");
+        pm_energy.load_watt = 0;
+        pm_energy.pv_power = 0;
+        pm_energy.t0026_total_power = 0;
+      return pm_energy;}
+  }
+  if(stateResp->software_version != SOFTWARE_VERSION) {
+    delay(200);
+    Serial.println("readEnergy SOFTWARE_VERSION !="+SOFTWARE_VERSION);
+    stateResp = read_data_value();
+  }
+  if(stateResp->software_version == SOFTWARE_VERSION) {
+    pm_energy.load_energy += ((float)stateResp->load_watt + (float)pm_energy.load_watt)/2*duration/3600;
+    pm_energy.load_watt = stateResp->load_watt;
+    pm_energy.pv_energy += ((float)stateResp->pv_power + (float)pm_energy.pv_power)/2*duration/3600; // /10 for voltage /100 for current
+    pm_energy.pv_power = stateResp->pv_power;
+    pm_energy.t0026_total_energy += ((float)stateResp->t0026 + (float)pm_energy.t0026_total_power)/2*duration/3600;
+    pm_energy.t0026_total_power = stateResp->t0026;}
+  return pm_energy;
+}
+
+
