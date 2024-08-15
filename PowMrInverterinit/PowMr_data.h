@@ -8,11 +8,13 @@
 
 //#define ONE_WIRE_BUS 4
 //#define TEMPERATURE_PRECISION 9
-#define SOFTWARE_VERSION 5903
+#define SOFTWARE_VERSION 5502
 struct PowMr_energy{
-  int16_t pv_power,load_watt,t0026_total_power;
+  int16_t pv_power,load_watt,t0026_total_power,batt_power;
+  int16_t batt_power_charge,batt_power_discharge;
   unsigned long duration,last_record;
-  float pv_energy,load_energy,t0026_total_energy;
+  float pv_energy,load_energy,t0026_total_energy,batt_energy;
+  float batt_energy_charge,batt_energy_discharge;
 };
 
 class PowMr_data: public Data_interface {

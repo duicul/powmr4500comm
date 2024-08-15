@@ -89,9 +89,9 @@ if __name__ == "__main__":
     #client = InfluxDBClient(url="http://localhost:8086", token=token)
     #write_api = client.write_api(write_options=SYNCHRONOUS)
 
-    for i in range(257):
+    '''for i in range(257):
         powmr = PowMr('COM6', i)
-        powmr.serial.baudrate = 2400
+        powmr.serial.baudrate = 9600
         #powmr.clear_buffers_before_each_transaction = True
         #powmr.debug = True
         #powmr.serial.port # this is the serial port name
@@ -105,13 +105,14 @@ if __name__ == "__main__":
         #powmr.mode = minimalmodbus.MODE_RTU # rtu or ascii mode
         try:
                 register = powmr.read_registers(4501,45)
+                print(''.join(format(x, '02x') for x in register))
                 print(f"Register {i} \t=>  {register}")
         except Exception as e:
                 print(f"Register {i} \t=>   Exception "+str(e))
-                pass
+                pass'''
     powmr = PowMr('COM6', 1)
     #powmr.read_registers(4501,45)
-    powmr.serial.baudrate = 2400
+    powmr.serial.baudrate = 9600
     #powmr.clear_buffers_before_each_transaction = True
     #powmr.debug = True
     data = powmr.dump_registers()

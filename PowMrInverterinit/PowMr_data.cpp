@@ -134,8 +134,8 @@ String PowMr_data::convertToJSON(inv8851_state_s *state){
   if(state == NULL)
     return message;
   message += "{";
-  if(state->software_version != SOFTWARE_VERSION)
-    message += "\"status\":\"disconnected\",";
+  //if(state->software_version != SOFTWARE_VERSION)
+  //  message += "\"status\":\"disconnected\",";
   message += "\"proto\":";
   message += state->proto;
   message += ",\"command\":";
@@ -157,33 +157,33 @@ String PowMr_data::convertToJSON(inv8851_state_s *state){
   message += ",\"buck_topology\":";
   message += "\""+runModeSerialize(state->buck_topology)+"\"";
   message += ",\"system_power\":";
-  message += state->system_power;
+  message += state->system_power == 0 ? "false":"true";
   message += ",\"charge_finish\":";
-  message += state->charge_finish;
+  message += state->charge_finish == 0 ? "false":"true";
   message += ",\"bus_ok\":";
-  message += state->bus_ok;
+  message += state->bus_ok == 0 ? "false":"true";
   message += ",\"bus_n_grid_voltage_match\":";
-  message += state->bus_n_grid_voltage_match;
+  message += state->bus_n_grid_voltage_match == 0 ? "false":"true";
   message += ",\"no_battery\":";
-  message += state->no_battery;
+  message += state->no_battery == 0 ? "false":"true";
   message += ",\"pv_excess\":";
-  message += state->pv_excess;
+  message += state->pv_excess == 0 ? "false":"true";
   message += ",\"floating_charge\":";
-  message += state->floating_charge;
+  message += state->floating_charge == 0 ? "false":"true";
   message += ",\"system_initial_finished\":";
-  message += state->system_initial_finished;
+  message += state->system_initial_finished == 0 ? "false":"true";
   message += ",\"inverter_topology_initial_finished\":";
-  message += state->inverter_topology_initial_finished;
+  message += state->inverter_topology_initial_finished == 0 ? "false":"true";
   message += ",\"llc_topology_initial_finished\":";
-  message += state->llc_topology_initial_finished;
+  message += state->llc_topology_initial_finished == 0 ? "false":"true";
   message += ",\"pv_topology_initial_finished\":";
-  message += state->pv_topology_initial_finished;
+  message += state->pv_topology_initial_finished == 0 ? "false":"true";
   message += ",\"buck_topology_initial_finished\":";
-  message += state->buck_topology_initial_finished;
+  message += state->buck_topology_initial_finished == 0 ? "false":"true";
   message += ",\"eq_charge_start\":";
-  message += state->eq_charge_start;
+  message += state->eq_charge_start == 0 ? "false":"true";
   message += ",\"eq_charge_ready\":";
-  message += state->eq_charge_ready;
+  message += state->eq_charge_ready == 0 ? "false":"true";
   message += ",\"w6\":";
   message += state->w6;
   message += ",\"t0002\":";
@@ -191,13 +191,13 @@ String PowMr_data::convertToJSON(inv8851_state_s *state){
   message += ",\"t0003\":";
   message += state->t0003;
   message += ",\"grid_pll_ok\":";
-  message += state->grid_pll_ok;
+  message += state->grid_pll_ok == 0 ? "false":"true";
   message += ",\"lo0004\":";
   message += state->lo0004;
   message += ",\"hi0004\":";
   message += state->hi0004;
   message += ",\"disable_utility\":";
-  message += state->disable_utility;
+  message += state->disable_utility == 0 ? "false":"true";
   message += ",\"hi0004_\":";
   message += state->hi0004_;
   message += ",\"t0005\":";
@@ -218,11 +218,11 @@ String PowMr_data::convertToJSON(inv8851_state_s *state){
   message += ",\"lo0013\":";
   message += state->lo0013;
   message += ",\"pv_input_ok\":";
-  message += state->pv_input_ok;
+  message += state->pv_input_ok == 0 ? "false":"true";
   message += ",\"lo0013_\":";
   message += state->lo0013_;
   message += ",\"parallel_lock_phase_ok\":";
-  message += state->parallel_lock_phase_ok;
+  message += state->parallel_lock_phase_ok == 0 ? "false":"true";
   message += ",\"hi0013\":";
   message += state->hi0013;
 
@@ -278,6 +278,8 @@ String PowMr_data::convertToJSON(inv8851_state_s *state){
   message += state->parallel_frequency;
   message += ",\"battery_voltage\":";
   message += state->battery_voltage;
+  message += ",\"batt_power\":";
+  message += (float)abs(state->battery_voltage) * (float)abs(state->batt_charge_current)/1000;;
   message += ",\"batt_charge_current\":";
   message += state->batt_charge_current;
   message += ",\"batt_charge_current\":";
@@ -361,6 +363,18 @@ String PowMr_data::convertToJSON(PowMr_energy Mr_energy){
   message += Mr_energy.load_energy;
   message += ",\"load_watt\":";
   message += Mr_energy.load_watt;
+  message += ",\"batt_energy\":";
+  message += Mr_energy.batt_energy;
+  message += ",\"batt_energy_charge\":";
+  message += Mr_energy.batt_energy_charge;
+  message += ",\"batt_energy_discharge\":";
+  message += Mr_energy.batt_energy_discharge;
+  message += ",\"batt_power\":";
+  message += Mr_energy.batt_power;
+  message += ",\"batt_power_charge\":";
+  message += Mr_energy.batt_power_charge;
+  message += ",\"batt_power_discharge\":";
+  message += Mr_energy.batt_power_discharge;
   message += ",\"pv_energy\":";
   message += Mr_energy.pv_energy;
   message += ",\"pv_power\":";
@@ -402,6 +416,12 @@ String PowMr_data::read_data(){
 }
 
 PowMr_energy PowMr_data::initEnergy(){
+  pm_energy.batt_energy = 0;
+  pm_energy.batt_energy_charge = 0;
+  pm_energy.batt_energy_discharge = 0;
+  pm_energy.batt_power = 0;
+  pm_energy.batt_power_charge = 0;
+  pm_energy.batt_power_discharge = 0;
   pm_energy.load_energy = 0;
   pm_energy.load_watt = 0;
   pm_energy.pv_energy = 0;
@@ -415,6 +435,9 @@ PowMr_energy PowMr_data::initEnergy(){
 
 PowMr_energy PowMr_data::readEnergyClean(){
   PowMr_energy pm_energyaux = readEnergy();
+  pm_energy.batt_energy = 0;
+  pm_energy.batt_energy_charge = 0;
+  pm_energy.batt_energy_discharge = 0;
   pm_energy.load_energy = 0;
   pm_energy.pv_energy = 0;
   pm_energy.t0026_total_energy = 0;
@@ -433,6 +456,7 @@ PowMr_energy PowMr_data::readEnergy(){
     inv8851_state_s* stateResp = read_data_value();
     if(stateResp == NULL){
       Serial.println("readEnergy 1 stateResp NULL");
+        pm_energy.batt_power = 0;
         pm_energy.load_watt = 0;
         pm_energy.pv_power = 0;
         pm_energy.t0026_total_power = 0;
@@ -444,12 +468,25 @@ PowMr_energy PowMr_data::readEnergy(){
     stateResp = read_data_value();
   }
   if(stateResp->software_version == SOFTWARE_VERSION) {
-    pm_energy.load_energy += ((float)stateResp->load_watt + (float)pm_energy.load_watt)/2*duration/3600;
-    pm_energy.load_watt = stateResp->load_watt;
-    pm_energy.pv_energy += ((float)stateResp->pv_power + (float)pm_energy.pv_power)/2*duration/3600; // /10 for voltage /100 for current
-    pm_energy.pv_power = stateResp->pv_power;
-    pm_energy.t0026_total_energy += ((float)stateResp->t0026 + (float)pm_energy.t0026_total_power)/2*duration/3600;
-    pm_energy.t0026_total_power = stateResp->t0026;}
+    float curr_batt_power = (float)(stateResp->battery_voltage) * (float)(stateResp->batt_charge_current)/1000; // 100 for v, 10 for A
+    pm_energy.batt_energy += ((float)curr_batt_power + (float)pm_energy.batt_power)/2*duration/3600;
+    if(curr_batt_power>0){
+      pm_energy.batt_energy_charge += ((float)curr_batt_power + (float)pm_energy.batt_power_charge)/2*duration/3600;
+      pm_energy.batt_power_charge = curr_batt_power;
+      pm_energy.batt_power_discharge = 0;
+    }
+    else{
+      pm_energy.batt_energy_discharge += ((float)curr_batt_power + (float)pm_energy.batt_power_discharge)/2*duration/3600;
+      pm_energy.batt_power_charge = 0;
+      pm_energy.batt_power_discharge = curr_batt_power;
+    }
+    pm_energy.batt_power = curr_batt_power;
+    pm_energy.load_energy += ((float)abs(stateResp->load_watt) + (float)pm_energy.load_watt)/2*duration/3600;
+    pm_energy.load_watt = abs(stateResp->load_watt);
+    pm_energy.pv_energy += ((float)abs(stateResp->pv_power) + (float)pm_energy.pv_power)/2*duration/3600; // /10 for voltage /100 for current
+    pm_energy.pv_power = abs(stateResp->pv_power);
+    pm_energy.t0026_total_energy += ((float)abs(stateResp->t0026) + (float)pm_energy.t0026_total_power)/2*duration/3600;
+    pm_energy.t0026_total_power = abs(stateResp->t0026);}
   return pm_energy;
 }
 
