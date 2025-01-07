@@ -69,6 +69,18 @@ void handlemodbussettings(){
   server.send(200, "application/json", message);
 }
 
+void handlePowlandEnergy() {
+  PowLand_energy pl = powland.readEnergy();
+  String message = pl.read_data();
+  server.send(200, "application/json", message);
+}
+
+void handlePowlandEnergyClean() {
+  PowLand_energy pl = powland.readEnergyClean();
+  String message = pl.read_data();
+  server.send(200, "application/json", message);
+}
+
 
 void setup(){
   delay(1000);
@@ -111,6 +123,9 @@ void setup(){
   
   server.on("/modbussettings", handlemodbussettings);
 
+  server.on("/modbus_energy", handlePowlandEnergy);
+  server.on("/modbus_energy_clean", handlePowlandEnergyClean);
+
   server.on("/change", handlechangecredentials);
   //server.on("/scanonewire", handleFindDevices);
   server.on("/restart", handleRestart);
@@ -130,7 +145,7 @@ void loop() {
         ESP.restart();
   }
     server.handleClient();
-  /*if( cred.getpolling_duration()>0 && ( (millis()/1000-powmr.pm_energy.last_record) >= cred.getpolling_duration() || (millis()/1000< powmr.pm_energy.last_record) ) ){
-      powmr.readEnergy();
-    }  */
+  if( cred.getpolling_duration()>0 && ( (millis()/1000-powland.pl_energy.last_record) >= cred.getpolling_duration() || (millis()/1000< powland.pl_energy.last_record) ) ){
+      powland.readEnergy();
+    } 
 }

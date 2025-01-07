@@ -58,8 +58,8 @@ JsonDocument Powland_data_class::extractResponse(uint8_t result){
   return doc;
 }
 
-JsonDocument Powland_data_class::read_data_value(){
-  JsonDocument doc,doc_new,doc_old,doc_addr;
+JsonDocument  Powland_data_class::read_data_value(){
+  JsonDocument  doc,doc_new,doc_old,doc_addr;
   static uint32_t i;
   uint8_t j, result;
   float data[ADDR_LEN+ADDR_LEN/20];
@@ -121,3 +121,121 @@ String Powland_data_class::read_data(){
   serializeJson(doc, ouput_str);
   return ouput_str;
 }
+
+PowLand_energy Powland_data_class::initEnergy(){
+  pl_energy.AverageInverterPower = 0;
+  pl_energy.AverageMainsPower = 0;
+  pl_energy.BatteryAveragePower = 0;
+  pl_energy.InverterChargingPower = 0;
+  pl_energy.OutputActivePower = 0;
+  pl_energy.OutputApparentPower = 0;
+  pl_energy.PVAveragePower = 0;
+  pl_energy.PVChargingAveragePower = 0;
+  
+  pl_energy.AverageInverterEnergy = 0;
+  pl_energy.AverageMainsEnergy = 0;
+  pl_energy.BatteryAverageEnergy = 0;
+  pl_energy.InverterChargingEnergy = 0;
+  pl_energy.OutputActiveEnergy = 0;
+  pl_energy.OutputApparentEnergy = 0;
+  pl_energy.PVAverageEnergy = 0;
+  pl_energy.PVChargingAverageEnergy = 0;
+
+  pl_energy.duration = 0;
+  pl_energy.last_record = millis()/1000;
+  
+  return pl_energy;
+}
+
+PowLand_energy Powland_data_class::readEnergyClean(){
+  PowLand_energy pl_energyaux = readEnergy();
+  pl_energy.AverageInverterEnergy=0;
+  pl_energy.AverageMainsEnergy=0;
+  pl_energy.BatteryAverageEnergy=0;
+  pl_energy.InverterChargingEnergy=0;
+  pl_energy.OutputActiveEnergy=0;
+  pl_energy.OutputApparentEnergy=0;
+  pl_energy.PVAverageEnergy=0;
+  pl_energy.PVChargingAverageEnergy=0;
+  pl_energy.duration = 0;
+  return pl_energyaux;
+}
+
+PowLand_energy Powland_data_class::readEnergy(){
+  unsigned long duration;
+  float AverageInverterPower,AverageMainsPower,BatteryAveragePower,InverterChargingPower,OutputActivePower,OutputApparentPower,PVAveragePower,PVChargingAveragePower;
+  duration = millis()/1000 - pl_energy.last_record;
+  pl_energy.duration += duration;
+  pl_energy.last_record = millis()/1000;
+  JsonDocument  jsonVal = read_data_value();
+  if(jsonVal["resp"] != 1){
+    AverageInverterPower=0;
+    AverageMainsPower=0;
+    BatteryAveragePower=0;
+    InverterChargingPower=0;
+    OutputActivePower=0;
+    OutputApparentPower=0;
+    PVAveragePower=0;
+    PVChargingAveragePower=0;
+  }
+  else{
+    JsonDocument  vals = jsonVal["values"];
+    AverageInverterPower=vals["AverageInverterPower"];
+    AverageMainsPower=vals["AverageMainsPower"];
+    BatteryAveragePower=vals["BatteryAveragePower"];
+    InverterChargingPower=vals["InverterChargingPower"];
+    OutputActivePower=vals["OutputActivePower"];
+    OutputApparentPower=vals["OutputApparentPower"];
+    PVAveragePower=vals["PVAveragePower"];
+    PVChargingAveragePower=vals["PVChargingAveragePower"];
+  }
+  pl_energy.AverageInverterEnergy+=(AverageInverterPower+pl_energy.AverageInverterPower)/2*duration/3600;
+  pl_energy.AverageMainsEnergy+=(AverageMainsPower+pl_energy.AverageMainsPower)/2*duration/3600;
+  pl_energy.BatteryAverageEnergy+=(BatteryAveragePower+pl_energy.BatteryAveragePower)/2*duration/3600;
+  pl_energy.InverterChargingEnergy+=(InverterChargingPower+pl_energy.InverterChargingPower)/2*duration/3600;
+  pl_energy.OutputActiveEnergy+=(OutputActivePower+pl_energy.OutputActivePower)/2*duration/3600;
+  pl_energy.OutputApparentEnergy+=(OutputApparentPower+pl_energy.OutputApparentPower)/2*duration/3600;
+  pl_energy.PVAverageEnergy+=(PVAveragePower+pl_energy.PVAveragePower)/2*duration/3600;
+  pl_energy.PVChargingAverageEnergy+=(PVChargingAveragePower+pl_energy.PVChargingAveragePower)/2*duration/3600;
+
+  pl_energy.AverageInverterPower = AverageInverterPower;
+  pl_energy.AverageMainsPower = AverageMainsPower;
+  pl_energy.BatteryAveragePower = BatteryAveragePower;
+  pl_energy.InverterChargingPower = InverterChargingPower;
+  pl_energy.OutputActivePower = OutputActivePower;
+  pl_energy.OutputApparentPower = OutputApparentPower;
+  pl_energy.PVAveragePower = PVAveragePower;
+  pl_energy.PVChargingAveragePower = PVChargingAveragePower;
+
+  return pl_energy;
+}
+JsonDocument PowLand_energy::read_data_value(){
+  JsonDocument val;
+  val["AverageInverterPower"] = AverageInverterPower;
+  val["AverageMainsPower"] = AverageMainsPower;
+  val["BatteryAveragePower"] = BatteryAveragePower;
+  val["InverterChargingPower"] = InverterChargingPower;
+  val["OutputActivePower"] = OutputActivePower;
+  val["OutputApparentPower"] = OutputApparentPower;
+  val["PVAveragePower"] = PVAveragePower;
+  val["PVChargingAveragePower"] = PVChargingAveragePower;
+  
+  val["AverageInverterEnergy"] = AverageInverterEnergy;
+  val["AverageMainsEnergy"] = AverageMainsEnergy;
+  val["BatteryAverageEnergy"] = BatteryAverageEnergy;
+  val["InverterChargingEnergy"] = InverterChargingEnergy;
+  val["OutputActiveEnergy"] = OutputActiveEnergy;
+  val["OutputApparentEnergy"] = OutputApparentEnergy;
+  val["PVAverageEnergy"] = PVAverageEnergy;
+  val["PVChargingAverageEnergy"] = PVChargingAverageEnergy;
+
+  val["duration"] = duration;
+  val["last_record"] = last_record;
+  return val;
+}
+
+String PowLand_energy::read_data(){
+  String ouput_str;
+  JsonDocument val = read_data_value();
+  serializeJson(val, ouput_str);
+  return ouput_str;}
