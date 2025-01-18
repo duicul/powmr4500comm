@@ -34,7 +34,7 @@ for value in values:
     split_lists.append(split_list)
 
 for i in range(len(split_lists[0])):
-    if(split_lists[0][i]!=split_lists[1][i]):
+    if(len(split_lists)>=2 and split_lists[0][i]!=split_lists[1][i]):
         print(str(i)+" "+str(split_lists[0][i])+ " <-> "+str(split_lists[1][i]))
         print(str(i)+" "+str(int(split_lists[0][i],16))+ " <-> "+str(int(split_lists[1][i],16)))
         print()
